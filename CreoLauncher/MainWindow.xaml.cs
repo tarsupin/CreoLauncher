@@ -195,7 +195,13 @@ namespace CreoLauncher {
 				VersionLabel.Content = "Version " + saveDetect.VersionToString();
 
 				// Update the Status
-				this.Status = LaunchStatus.Ready;
+				if(this.Status == LaunchStatus.DownloadingGame) {
+					this.Status = LaunchStatus.Ready;
+					this.StatusShow("Game Installed!", 33, 163, 37, 255);
+				} else {
+					this.Status = LaunchStatus.Ready;
+					this.StatusShow("Updates Installed!", 33, 163, 37, 255);
+				}
 			}
 			
 			catch(Exception ex) {
@@ -236,6 +242,7 @@ namespace CreoLauncher {
 
 				// Update the Status
 				this.Status = LaunchStatus.Ready;
+				this.StatusShow("Updates Installed!", 33, 163, 37, 255);
 			}
 			
 			catch(Exception ex) {
