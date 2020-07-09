@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>images\GameIcon.ico</ApplicationIcon>
+    <Company>Nexus Games</Company>
+    <Authors>Nexus Games</Authors>
+    <Product />
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="images\GameIcon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="images\GameIcon.ico" />
+  </ItemGroup>
+
+</Project>

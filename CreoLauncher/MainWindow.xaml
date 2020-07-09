@@ -1,0 +1,75 @@
+﻿<Window x:Class="CreoLauncher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CreoLauncher"
+        mc:Ignorable="d"
+        ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen"
+        ContentRendered="Window_ContentRendered"
+        Title="Creo Launcher" Height="600" Width="1080">
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FF8DC8F1" Offset="0"/>
+                <GradientStop Color="#FFE1F7FF" Offset="1"/>
+                <GradientStop Color="#FF95C6EC" Offset="0.502"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Label x:Name="TitleLabel" Content="Creo Nexus" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="41" Width="155" FontSize="22" FontWeight="Bold"/>
+        <Label x:Name="VersionLabel" Content="Version 0.0.0" HorizontalAlignment="Left" Margin="150,21,0,0" VerticalAlignment="Top" Height="30" Width="132"/>
+        <Label x:Name="StatusLabel" Content="Updating Game" Visibility="Visible" HorizontalAlignment="Center" Margin="0, 0, 0, 10" Height="38" HorizontalContentAlignment="Center" MinWidth="280" MaxWidth="400" MinHeight="38" VerticalAlignment="Bottom" FontSize="24" FontWeight="Bold" Background="#66FFEB23" Padding="10,2,10,0" />
+        <WebBrowser HorizontalAlignment="Center" Margin="10,51,10,60" VerticalAlignment="Top" />
+        <Button x:Name="ButtonWebsite" Content="Launch Website" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Height="38" Width="242" Click="Button_LaunchWebsite" Background="#FF415ACB" Foreground="White" FontWeight="Bold" BorderBrush="White" BorderThickness="0,0,0,0" TabIndex="2" Cursor="Hand">
+            <Button.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="CornerRadius" Value="5"/>
+                </Style>
+            </Button.Resources>
+            <Button.Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FF4C87C1" TargetName="Border" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+        <Button x:Name="ButtonPlay" Content="Play Game" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Height="38" Width="242" Click="Button_PlayGame" Background="#FF08761C" Foreground="White" FontWeight="Bold" BorderBrush="White" BorderThickness="0,0,0,0" TabIndex="1" OpacityMask="Black" Cursor="Hand">
+            <Button.Resources>
+                <Style TargetType="{x:Type Border}">
+                    <Setter Property="CornerRadius" Value="5"/>
+                </Style>
+            </Button.Resources>
+            <Button.Style>
+                <Style TargetType="{x:Type Button}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type Button}">
+                                <Border x:Name="Border" Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FF2D8F59" TargetName="Border" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+    </Grid>
+</Window>
