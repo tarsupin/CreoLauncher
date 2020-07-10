@@ -111,6 +111,7 @@ namespace CreoLauncher {
 
 			// If we're updating the entire /Build foolder, remove sub-packages that don't need updating.
 			if(PackagesToUpdate.ContainsKey("Game")) {
+				Installation.CheckRemovePackage("App", "Game");
 				Installation.CheckRemovePackage("Content", "Game");
 				Installation.CheckRemovePackage("Atlas", "Game");
 				Installation.CheckRemovePackage("Fonts", "Game");
@@ -135,7 +136,6 @@ namespace CreoLauncher {
 			foreach(var ptu in PackagesToUpdate) {
 				Installation.CurrentPackage = ptu.Value;
 				await InstallPackage(Installation.CurrentPackage);
-				break;
 			}
 
 			// Update the Creo Launcher's Label:
