@@ -9,6 +9,7 @@
 		public const string BucketURL = "http://creo-nexus.us-east-1.linodeobjects.com/";
 
 		// Essential Filenames
+		public const string VersionFile = "Version.txt";
 		public const string VersioningFile = "Versioning.txt";
 
 		// Directories
