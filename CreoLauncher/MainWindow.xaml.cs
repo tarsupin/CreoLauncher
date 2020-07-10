@@ -6,6 +6,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Windows;
 using System.Windows.Media;
+using static CreoLauncher.GamePackage;
 using Path = System.IO.Path;
 
 namespace CreoLauncher {
@@ -14,9 +15,7 @@ namespace CreoLauncher {
 		Ready,
 		CheckingForUpdates,
 		UpdateAvailable,
-		DownloadingGame,
 		DownloadingUpdate,
-		DownloadingContent,
 		DownloadFailed,
 		Installing,
 	}
@@ -28,17 +27,11 @@ namespace CreoLauncher {
 
 		private FilesLocal localFiles;
 
-		// File Paths
+		// Paths
 		private string pathRoot;
 		private string pathBuild;
-
-		// Locations that files are downloaded to:
-		private string dlDetectFile;
-		private string dlZipFile;
-		private string dlPlanetFile;
-
-		// Paths to Files
-		private string buildPathGameFile;		// Where the application is stored (in /Build)
+		private string pathDownloads;
+		private string pathApp;			// Where the application is stored (in /Build)
 
 		// Status
 		private LaunchStatus _status;
@@ -65,14 +58,8 @@ namespace CreoLauncher {
 					StatusLabel.Visibility = Visibility.Hidden;
 				}
 
-				// Downloading Game (Initial Download)
-				else if(_status == LaunchStatus.DownloadingGame) {
-					ButtonPlay.Content = "Waiting...";
-					this.StatusShow("Downloading Game..", 89, 240, 33, 40);
-				}
-				
 				// Downloading Update
-				else if(_status == LaunchStatus.DownloadingUpdate || _status == LaunchStatus.DownloadingContent) {
+				else if(_status == LaunchStatus.DownloadingUpdate) {
 					ButtonPlay.Content = "Waiting...";
 					this.StatusShow("Downloading Updates..", 89, 240, 33, 40);
 				}
@@ -94,19 +81,23 @@ namespace CreoLauncher {
 		public MainWindow() {
 			InitializeComponent();
 
-			this.pathRoot = Directory.GetCurrentDirectory();
-			this.pathBuild = Path.Combine(this.pathRoot, Configs.Dir_Build);
-
-			// Download Paths
-			this.dlDetectFile = Path.Combine(this.pathRoot, Configs.DL_DetectFile);
-			this.dlZipFile = Path.Combine(this.pathRoot, Configs.DL_ZipFile);
-			this.dlPlanetFile = Path.Combine(this.pathRoot, Configs.DL_PlanetFile);
-			
 			// Paths
-			this.buildPathGameFile = Path.Combine(this.pathBuild, Configs.Build_Path_Application);
+			this.pathRoot = Directory.GetCurrentDirectory();
+			this.pathDownloads = Path.Combine(this.pathRoot, Configs.Dir_Download);
+			this.pathBuild = Path.Combine(this.pathRoot, Configs.Dir_Build);
+			this.pathApp = Path.Combine(this.pathBuild, Configs.Build_Path_Application);
 
 			// Prepare Local Paths
 			this.localFiles = new FilesLocal();
+
+			// Create Downloads Directory if it doesn't exist.
+			if(!Directory.Exists(this.pathDownloads)) {
+				Directory.CreateDirectory(this.pathDownloads);
+			}
+
+			// If Local Versioning file doesn't exist, build an empty one.
+			string versionPath = Path.Combine(this.pathDownloads, Configs.VersioningFile);
+			if(!File.Exists(versionPath)) { File.WriteAllText(versionPath, ""); }
 		}
 
 		private void StatusShow(string text, byte red, byte green, byte blue, byte alpha) {
@@ -115,43 +106,56 @@ namespace CreoLauncher {
 			StatusLabel.Visibility = Visibility.Visible;
 		}
 
-		private DetectData GetLocalDetectData() {
-			string detectStr = File.Exists(this.dlDetectFile) ? File.ReadAllText(this.dlDetectFile) : DetectData.emptyStr;
-			return new DetectData(detectStr);
+		private VersioningManager GetLocalVersioningManager() {
+			string versionPath = Path.Combine(this.pathDownloads, Configs.VersioningFile);
+			string versionStr = File.Exists(versionPath) ? File.ReadAllText(versionPath) : "";
+			return new VersioningManager(versionStr);
 		}
 
-		private bool SaveDetectString(DetectData saveDetect) {
-			File.WriteAllText(this.dlDetectFile, saveDetect.ToString());
+		private bool SaveVersionString(VersioningManager saveVersionStr) {
+			string versionPath = Path.Combine(this.pathDownloads, Configs.VersioningFile);
+			File.WriteAllText(versionPath, saveVersionStr.ToString());
 			return true;
 		}
 
 		private void CheckForUpdates() {
 			this.Status = LaunchStatus.CheckingForUpdates;
 
-			// Retrieve the local Detect.json file. If it doesn't exist, build an empty one.
-			DetectData localDetect = this.GetLocalDetectData();
-			bool firstUpdate = localDetect.IsEmpty();
+			// Retrieve the local Versioning and VersioningRules files.
+			VersioningManager localVersioning = this.GetLocalVersioningManager();
+			bool firstUpdate = !localVersioning.packages.ContainsKey("Game") || localVersioning.packages["Game"].versionID == 0;
 
 			// Update the Visual Label
-			VersionLabel.Content = "Version " + localDetect.VersionToString();
+			// VersionLabel.Content = "Version " + localVersioning.VersionToString();
 
 			// Check For Updates
 			try {
 				WebClient webClient = new WebClient();
 
-				// Retrieve the Online Detect file.
-				string onlineStr = webClient.DownloadString(Configs.DetectDataURL);
-				DetectData onlineDetect = new DetectData(onlineStr);
+				// Retrieve the Online Versioning file.
+				string onlineStr = webClient.DownloadString(Configs.BucketURL + Configs.VersioningFile);
+				VersioningManager onlineVersioning = new VersioningManager(onlineStr);
 
-				if(onlineDetect.HasDifferentVersionThan(localDetect)) {
-					this.InstallGameFiles(firstUpdate, onlineDetect);
-					return;
-				}
+				// Loop through every Online Versioning file:
+				foreach(var packages in onlineVersioning.packages) {
+					GamePackage onlinePackage = packages.Value;
 
-				// Check if the Curated Content is Newer:
-				if(onlineDetect.planets != localDetect.planets) {
-					this.InstallPlanetUpdates(onlineDetect);
-					return;
+					// If the Local Versioning doesn't contain this package:
+					if(!localVersioning.packages.ContainsKey(packages.Value.title)) {
+
+						// If this package requires an update:
+						if(onlinePackage.versionID > 0) {
+							this.InstallPackage(onlinePackage);
+						}
+					}
+
+					else {
+						GamePackage localPackage = localVersioning.packages[packages.Value.title];
+
+						if(onlinePackage.versionID < localPackage.versionID) {
+							this.InstallPackage(onlinePackage);
+						}
+					}
 				}
 
 				this.Status = LaunchStatus.Ready;
@@ -163,82 +167,73 @@ namespace CreoLauncher {
 			}
 		}
 
-		private void InstallGameFiles(bool runFullDownload, DetectData _onlineVersion) {
+		private void InstallPackage(GamePackage package) {
 			try {
-				this.Status = runFullDownload ? LaunchStatus.DownloadingGame : LaunchStatus.DownloadingUpdate;
+
+				this.Status = LaunchStatus.DownloadingUpdate;
+				this.StatusShow("Downloading " + package.title, 89, 240, 33, 40);
+
+				string downloadPath = Path.Combine(this.pathDownloads, package.downloadPath);
 
 				WebClient webClient = new WebClient();
 				webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
-				webClient.DownloadFileAsync(new Uri(Configs.GameZipURL), this.dlZipFile, _onlineVersion);
+				webClient.DownloadFileAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath, package);
 			}
 
 			catch(Exception ex) {
 				this.Status = LaunchStatus.DownloadFailed;
-				MessageBox.Show($"Error while installing game updates: {ex}");
+				MessageBox.Show($"Error while downloading game updates: {ex}");
 			}
 		}
 
 		private void DownloadGameCompletedCallback(object sender, AsyncCompletedEventArgs e) {
 			try {
-				DetectData onlineDetect = (DetectData) e.UserState;
+				GamePackage package = (GamePackage) e.UserState;
 
-				// Unzip the file into the root directory and delete the zip afterward.
-				ZipFile.ExtractToDirectory(this.dlZipFile, this.pathBuild, true);
-				File.Delete(this.dlZipFile);
+				string fromPath = Path.Combine(this.pathDownloads, package.downloadPath);
+				string basePath = "";
 
-				// Update the Detect.txt file with the new values.
-				DetectData localDetect = this.GetLocalDetectData();
-				DetectData saveDetect = new DetectData(onlineDetect.major, onlineDetect.minor, onlineDetect.subMinor, localDetect.planets);
+				// Root Directory Update
+				if(package.dirEnum == (byte) DirectoryEnum.RootDirectory) {
+					basePath = this.pathRoot;
+				}
+				
+				// Build Path Update
+				else if(package.dirEnum == (byte) DirectoryEnum.ContentDirectory) {
+					basePath = this.pathBuild;
+				}
+
+				// Local AppData Update
+				else if(package.dirEnum == (byte) DirectoryEnum.LocalAppData) {
+					basePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Configs.Dir_LocalApp_Folder);
+				}
+
+				// If the basePath wasn't set (shouldn't ever happen), just end here.
+				if(basePath.Length == 0) {
+					throw new Exception("The basePath was not set correctly due to invalid .dirEnum.");
+				}
+
+				string toPath = Path.Combine(basePath, package.finalPath);
+
+				// If we're working with a zip file.
+				// Unzip the file into the destination directory and delete the zip afterward.
+				if(fromPath.IndexOf(".zip") > 0) {
+					ZipFile.ExtractToDirectory(fromPath, toPath, true);
+					File.Delete(fromPath);
+				}
+
+				// If we're working with a regular file.
+				else {
+					File.Move(fromPath, toPath);
+				}
+
+				// Update the Versioning.txt file with the new values.
+				VersioningManager localDetect = this.GetLocalVersioningManager();
+				VersioningManager saveDetect = new VersioningManager(onlineVersion.major, onlineVersion.minor, onlineVersion.subMinor, localDetect.planets);
 				this.SaveDetectString(saveDetect);
 
 				// Update the Creo Launcher's Label:
-				VersionLabel.Content = "Version " + saveDetect.VersionToString();
-
-				// Update the Status
-				if(this.Status == LaunchStatus.DownloadingGame) {
-					this.Status = LaunchStatus.Ready;
-					this.StatusShow("Game Installed!", 33, 163, 37, 255);
-				} else {
-					this.Status = LaunchStatus.Ready;
-					this.StatusShow("Updates Installed!", 33, 163, 37, 255);
-				}
-			}
-			
-			catch(Exception ex) {
-				this.Status = LaunchStatus.DownloadFailed;
-				MessageBox.Show($"Error from downloading update: {ex}");
-			}
-		}
-
-		private void InstallPlanetUpdates(DetectData onlineDetect) {
-
-			// Scan for New Curated Content
-			try {
-				WebClient webClient = new WebClient();
-				this.Status = LaunchStatus.DownloadingUpdate;
-
-				webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadPlanetsCompletedCallback);
-				webClient.DownloadFileAsync(new Uri(Configs.PlanetContentURL), this.dlPlanetFile, onlineDetect);
-
-			} catch(Exception ex) {
-				this.Status = LaunchStatus.DownloadFailed;
-				MessageBox.Show($"Error: issue downloading new content: {ex}");
-			}
-		}
-
-		private void DownloadPlanetsCompletedCallback(object sender, AsyncCompletedEventArgs e) {
-			try {
-				DetectData onlineDetect = (DetectData)e.UserState;
-
-				// Save the Planet File into its appropriate local directory:
-				string content = File.ReadAllText(this.dlPlanetFile);
-				this.localFiles.WriteFile(Configs.Local_Path_Planets, content, true);
-				File.Delete(this.dlPlanetFile);
-
-				// Update the Detect.txt file with the new values.
-				DetectData localDetect = this.GetLocalDetectData();
-				DetectData saveDetect = new DetectData(localDetect.major, localDetect.minor, localDetect.subMinor, onlineDetect.planets);
-				this.SaveDetectString(saveDetect);
+				//VersionLabel.Content = "Version " + saveDetect.VersionToString();
 
 				// Update the Status
 				this.Status = LaunchStatus.Ready;
@@ -247,7 +242,7 @@ namespace CreoLauncher {
 			
 			catch(Exception ex) {
 				this.Status = LaunchStatus.DownloadFailed;
-				MessageBox.Show($"Error from downloading update: {ex}");
+				MessageBox.Show($"Error from installing update: {ex}");
 			}
 		}
 
@@ -258,8 +253,8 @@ namespace CreoLauncher {
 		private void Button_PlayGame(object sender, RoutedEventArgs e) {
 
 			// If the game file exists and the launch status is ready, let's play the game.
-			if(File.Exists(this.buildPathGameFile) && this.Status == LaunchStatus.Ready) {
-				ProcessStartInfo startInfo = new ProcessStartInfo(this.buildPathGameFile);
+			if(File.Exists(this.pathApp) && this.Status == LaunchStatus.Ready) {
+				ProcessStartInfo startInfo = new ProcessStartInfo(this.pathApp);
 				startInfo.WorkingDirectory = Path.Combine(this.pathRoot, "Build");
 				Process.Start(startInfo);
 				Close();

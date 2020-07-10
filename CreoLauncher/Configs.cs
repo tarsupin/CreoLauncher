@@ -6,22 +6,17 @@
 		public const string WebsiteLaunchURL = "http://creo.nexus.games";
 
 		// Download URLs
-		public const string DetectDataURL = "http://creo-nexus.us-east-1.linodeobjects.com/Detect.txt";
-		public const string GameZipURL = "http://creo-nexus.us-east-1.linodeobjects.com/Creo.zip";
-		public const string PlanetContentURL = "http://creo-nexus.us-east-1.linodeobjects.com/Planets.json";
+		public const string BucketURL = "http://creo-nexus.us-east-1.linodeobjects.com/";
 
-		// Original Download Paths
-		public const string DL_DetectFile = "Detect.txt";
-		public const string DL_ZipFile = "CreoBuild.zip";
-		public const string DL_PlanetFile = "Planets.json";
+		// Essential Filenames
+		public const string VersioningFile = "Versioning.txt";
 
 		// Directories
+		public const string Dir_Download = "Downloads";
 		public const string Dir_Build = "Build";
+		public const string Dir_LocalApp_Folder = "NexusGames/Creo";
 
 		// Build Paths
 		public const string Build_Path_Application = "Application.exe";
-
-		// Local Paths
-		public const string Local_Path_Planets = "Planets.json";
 	}
 }

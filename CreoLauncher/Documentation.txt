@@ -1,9 +1,0 @@
-﻿
-ZIP Contents needs to have:
-
-	/Build
-		-- This is where all of the game files go.
-		/Application.exe
-			-- This is the game executable.
-	Version.txt
-		- Change to Detect.json (and recover multiple values)
