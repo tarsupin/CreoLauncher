@@ -14,6 +14,7 @@
 		// Directories
 		public const string Dir_Download = "Downloads";
 		public const string Dir_Build = "Build";
+		public const string Dir_Content = "Build/Content";
 		public const string Dir_LocalApp_Folder = "NexusGames/Creo";
 
 		// Build Paths

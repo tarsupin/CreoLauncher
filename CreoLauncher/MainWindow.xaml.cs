@@ -25,11 +25,10 @@ namespace CreoLauncher {
 	/// </summary>
 	public partial class MainWindow : Window {
 
-		private FilesLocal localFiles;
-
 		// Paths
 		private string pathRoot;
 		private string pathBuild;
+		private string pathContent;
 		private string pathDownloads;
 		private string pathApp;			// Where the application is stored (in /Build)
 
@@ -85,10 +84,8 @@ namespace CreoLauncher {
 			this.pathRoot = Directory.GetCurrentDirectory();
 			this.pathDownloads = Path.Combine(this.pathRoot, Configs.Dir_Download);
 			this.pathBuild = Path.Combine(this.pathRoot, Configs.Dir_Build);
+			this.pathContent = Path.Combine(this.pathRoot, Configs.Dir_Content);
 			this.pathApp = Path.Combine(this.pathBuild, Configs.Build_Path_Application);
-
-			// Prepare Local Paths
-			this.localFiles = new FilesLocal();
 
 			// Create Downloads Directory if it doesn't exist.
 			if(!Directory.Exists(this.pathDownloads)) {
@@ -106,15 +103,15 @@ namespace CreoLauncher {
 			StatusLabel.Visibility = Visibility.Visible;
 		}
 
-		private VersioningManager GetLocalVersioningManager() {
+		private VersioningData GetLocalVersioningData() {
 			string versionPath = Path.Combine(this.pathDownloads, Configs.VersioningFile);
 			string versionStr = File.Exists(versionPath) ? File.ReadAllText(versionPath) : "";
-			return new VersioningManager(versionStr);
+			return new VersioningData(versionStr);
 		}
 
-		private bool SaveVersionString(VersioningManager saveVersionStr) {
+		private bool SaveVersionData(VersioningData saveVersion) {
 			string versionPath = Path.Combine(this.pathDownloads, Configs.VersioningFile);
-			File.WriteAllText(versionPath, saveVersionStr.ToString());
+			File.WriteAllText(versionPath, saveVersion.ToString());
 			return true;
 		}
 
@@ -122,7 +119,7 @@ namespace CreoLauncher {
 			this.Status = LaunchStatus.CheckingForUpdates;
 
 			// Retrieve the local Versioning and VersioningRules files.
-			VersioningManager localVersioning = this.GetLocalVersioningManager();
+			VersioningData localVersioning = this.GetLocalVersioningData();
 			bool firstUpdate = !localVersioning.packages.ContainsKey("Game") || localVersioning.packages["Game"].versionID == 0;
 
 			// Update the Visual Label
@@ -132,9 +129,11 @@ namespace CreoLauncher {
 			try {
 				WebClient webClient = new WebClient();
 
+				bool runningUpdates = false;
+
 				// Retrieve the Online Versioning file.
 				string onlineStr = webClient.DownloadString(Configs.BucketURL + Configs.VersioningFile);
-				VersioningManager onlineVersioning = new VersioningManager(onlineStr);
+				VersioningData onlineVersioning = new VersioningData(onlineStr);
 
 				// Loop through every Online Versioning file:
 				foreach(var packages in onlineVersioning.packages) {
@@ -145,20 +144,27 @@ namespace CreoLauncher {
 
 						// If this package requires an update:
 						if(onlinePackage.versionID > 0) {
+							runningUpdates = true;
 							this.InstallPackage(onlinePackage);
+							Console.WriteLine(packages.Value.title + ": Local version didn't contain, but online required an update.");
 						}
 					}
 
 					else {
 						GamePackage localPackage = localVersioning.packages[packages.Value.title];
 
-						if(onlinePackage.versionID < localPackage.versionID) {
+						if(onlinePackage.versionID != localPackage.versionID) {
+							runningUpdates = true;
 							this.InstallPackage(onlinePackage);
+							Console.WriteLine(packages.Value.title + ": Local version exists, online version was newer.");
 						}
 					}
 				}
 
-				this.Status = LaunchStatus.Ready;
+				// If there are no updates running, indicate the Ready state.
+				if(!runningUpdates) {
+					this.Status = LaunchStatus.Ready;
+				}
 			}
 				
 			catch(Exception ex) {
@@ -170,6 +176,7 @@ namespace CreoLauncher {
 		private void InstallPackage(GamePackage package) {
 			try {
 
+				// Update Status
 				this.Status = LaunchStatus.DownloadingUpdate;
 				this.StatusShow("Downloading " + package.title, 89, 240, 33, 40);
 
@@ -193,14 +200,19 @@ namespace CreoLauncher {
 				string fromPath = Path.Combine(this.pathDownloads, package.downloadPath);
 				string basePath = "";
 
-				// Root Directory Update
+				// Root Directory (/) Update
 				if(package.dirEnum == (byte) DirectoryEnum.RootDirectory) {
 					basePath = this.pathRoot;
 				}
 				
-				// Build Path Update
-				else if(package.dirEnum == (byte) DirectoryEnum.ContentDirectory) {
+				// Build Path (/Build) Update
+				else if(package.dirEnum == (byte) DirectoryEnum.BuildDirectory) {
 					basePath = this.pathBuild;
+				}
+				
+				// Content Path (/Build/Content) Update
+				else if(package.dirEnum == (byte) DirectoryEnum.ContentDirectory) {
+					basePath = this.pathContent;
 				}
 
 				// Local AppData Update
@@ -213,7 +225,7 @@ namespace CreoLauncher {
 					throw new Exception("The basePath was not set correctly due to invalid .dirEnum.");
 				}
 
-				string toPath = Path.Combine(basePath, package.finalPath);
+				string toPath = package.finalPath.Length > 0 ? Path.Combine(basePath, package.finalPath) : basePath;
 
 				// If we're working with a zip file.
 				// Unzip the file into the destination directory and delete the zip afterward.
@@ -227,10 +239,14 @@ namespace CreoLauncher {
 					File.Move(fromPath, toPath);
 				}
 
-				// Update the Versioning.txt file with the new values.
-				VersioningManager localDetect = this.GetLocalVersioningManager();
-				VersioningManager saveDetect = new VersioningManager(onlineVersion.major, onlineVersion.minor, onlineVersion.subMinor, localDetect.planets);
-				this.SaveDetectString(saveDetect);
+				// Update the Versioning.txt File
+				VersioningData localVersion = this.GetLocalVersioningData();
+				localVersion.UpdatePackage(package);
+
+				this.SaveVersionData(localVersion);
+
+				Console.WriteLine("Saving Updated Version:");
+				Console.WriteLine(localVersion.ToString());
 
 				// Update the Creo Launcher's Label:
 				//VersionLabel.Content = "Version " + saveDetect.VersionToString();

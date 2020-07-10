@@ -3,14 +3,14 @@ using System.Collections.Generic;
 
 namespace CreoLauncher {
 
-	// -- Versioning Manager -- /
+	// -- Versioning Data -- /
 
 	// Versioning.txt:		"Images:0:1:Images.zip:/Contents/Images;etc..."
 	//	- This contains a Dictionary of the rules for each Versioning Package.
 	//	- 1) The Package Title (e.g. "Images", "Game", "Music", etc.
 	//	- 2) The Versioning ID to compare to other versions.
-	//	- 3) The File to Download from the Server.
-	//	- 4) The Base Directory Enum (Root Directory, Build Directory, Local Directory)
+	//	- 3) The Base Directory Enum (Root Directory, Build Directory, Content Directory, Local Directory)
+	//	- 4) The File to Download from the Server.
 	//	- 5) The Destination Directory. Where to unzip or deliver the package / file.
 
 	// If one of your Versioning IDs is lower than the online Versioning ID, then the package needs to be updated.
@@ -31,11 +31,11 @@ namespace CreoLauncher {
 	//	- Local				// The Local Directory (Local AppData) is getting updated.
 	//	- Planets			// The Curated Planet List is getting updated.
 
-	public class VersioningManager {
+	public class VersioningData {
 
-		public Dictionary<string, GamePackage> packages;
+		public Dictionary<string, GamePackage> packages = new Dictionary<string, GamePackage>();
 
-		public VersioningManager(string VersioningText) {
+		public VersioningData(string VersioningText) {
 
 			// Split the Versioning Text into its dictionary components.
 			string[] split = VersioningText.Split(';');
@@ -44,7 +44,7 @@ namespace CreoLauncher {
 			for(byte i = 0; i < split.Length; i++) {
 
 				// Identify the Package Details (extract info via its delimiters)
-				string[] packSplit = VersioningText.Split(':');
+				string[] packSplit = split[i].Split(':');
 
 				// Ignore any package that isn't set correctly. Should have five delimited values.
 				if(packSplit.Length < 5) { continue; }
@@ -55,14 +55,44 @@ namespace CreoLauncher {
 				this.packages.Add(packSplit[0], new GamePackage(packSplit[0], versionID, dirEnum, packSplit[3], packSplit[4]));
 			}
 		}
+
+		public void UpdatePackage(GamePackage updatePackage) {
+
+			// If this Versioning doesn't contain the package listed:
+			if(!this.packages.ContainsKey(updatePackage.title)) {
+				this.packages.Add(updatePackage.title, updatePackage);
+				return;
+			}
+
+			// Check if this Versioning requires an update:
+			GamePackage localPackage = this.packages[updatePackage.title];
+
+			if(localPackage.versionID < updatePackage.versionID) {
+				this.packages[updatePackage.title] = updatePackage;
+			}
+		}
+
+		public override string ToString() {
+			string retString = "";
+
+			// Loop through every Versioning rule:
+			// "Images:0:1:Images.zip:/Contents/Images;etc..."
+			foreach(var packages in this.packages) {
+				GamePackage curPackage = packages.Value;
+				retString += $"{curPackage.title}:{curPackage.versionID}:{curPackage.dirEnum}:{curPackage.downloadPath}:{curPackage.finalPath};";
+			}
+
+			return retString.Substring(0, retString.Length - 1);
+		}
 	}
 
 	public struct GamePackage {
 
 		public enum DirectoryEnum : byte {
 			RootDirectory = 0,
-			ContentDirectory = 1,
-			LocalAppData = 2,
+			BuildDirectory = 1,
+			ContentDirectory = 2,
+			LocalAppData = 3,
 		}
 
 		public readonly string title;
