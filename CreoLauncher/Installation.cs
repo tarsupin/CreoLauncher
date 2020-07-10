@@ -1,14 +1,15 @@
-﻿
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using System.Threading.Tasks;
 using static CreoLauncher.GamePackage;
 
 namespace CreoLauncher {
 
-	public class Installation {
+	public static class Installation {
 
 		// Paths
 		public static string pathRoot;
@@ -16,6 +17,11 @@ namespace CreoLauncher {
 		public static string pathContent;
 		public static string pathDownloads;
 		public static string pathApp;         // Where the application is stored (in /Build)
+
+		// Packages to Update
+		public static GamePackage CurrentPackage;
+		public static Dictionary<string, GamePackage> PackagesToUpdate = new Dictionary<string, GamePackage>();
+		public static Dictionary<string, bool> PackageDownloaded = new Dictionary<string, bool>();
 
 		public static void PrepareInstallation() {
 
@@ -53,22 +59,19 @@ namespace CreoLauncher {
 
 			// Retrieve the local Versioning and VersioningRules files.
 			VersioningData localVersioning = Installation.GetLocalVersioningData();
-			bool firstUpdate = !localVersioning.packages.ContainsKey("Game") || localVersioning.packages["Game"].versionID == 0;
-
-			// Update the Visual Label
-			// VersionLabel.Content = "Version " + localVersioning.VersionToString();
 
 			// Check For Updates
 			try {
-				WebClient webClient = new WebClient();
+				string onlineStr;
 
-				bool runningUpdates = false;
+				using(WebClient client = new WebClient()) {
+					onlineStr = client.DownloadString(Configs.BucketURL + Configs.VersioningFile);
+				}
 
 				// Retrieve the Online Versioning file.
-				string onlineStr = webClient.DownloadString(Configs.BucketURL + Configs.VersioningFile);
 				VersioningData onlineVersioning = new VersioningData(onlineStr);
 
-				// Loop through every Online Versioning file:
+				// Loop through every GamePackage, and keep track of which ones need to update:
 				foreach(var packages in onlineVersioning.packages) {
 					GamePackage onlinePackage = packages.Value;
 
@@ -77,23 +80,25 @@ namespace CreoLauncher {
 
 						// If this package requires an update:
 						if(onlinePackage.versionID > 0) {
-							runningUpdates = true;
-							Installation.InstallPackage(onlinePackage);
+							PackagesToUpdate.Add(onlinePackage.title, onlinePackage);
 						}
 					} else {
 						GamePackage localPackage = localVersioning.packages[packages.Value.title];
 
 						if(onlinePackage.versionID != localPackage.versionID) {
-							runningUpdates = true;
-							Installation.InstallPackage(onlinePackage);
+							PackagesToUpdate.Add(onlinePackage.title, onlinePackage);
 						}
 					}
 				}
 
-				// If there are no updates running, indicate the Ready state.
-				if(!runningUpdates) {
-					MainWindow.WindowRef.SetStatus(LaunchStatus.Ready);
+				// If there are updates to run:
+				if(PackagesToUpdate.Count > 0) {
+					Installation.PreparePackageDownloads();
+					Installation.RunDownloads();
 				}
+
+				// Otherwise, if there are no updates, indicate the Ready state.
+				else { MainWindow.WindowRef.SetStatus(LaunchStatus.Ready); }
 			}
 			
 			catch(Exception ex) {
@@ -102,7 +107,58 @@ namespace CreoLauncher {
 			}
 		}
 
-		private static void InstallPackage(GamePackage package) {
+		private static void PreparePackageDownloads() {
+
+			// If we're updating the entire /Build foolder, remove sub-packages that don't need updating.
+			if(PackagesToUpdate.ContainsKey("Game")) {
+				Installation.CheckRemovePackage("Content", "Game");
+				Installation.CheckRemovePackage("Atlas", "Game");
+				Installation.CheckRemovePackage("Fonts", "Game");
+				Installation.CheckRemovePackage("Images", "Game");
+				Installation.CheckRemovePackage("Music", "Game");
+				Installation.CheckRemovePackage("Sounds", "Game");
+			}
+
+			// If we're updating the entire /Contents folder, remove sub-Content updates:
+			if(PackagesToUpdate.ContainsKey("Content")) {
+				Installation.CheckRemovePackage("Atlas", "Content");
+				Installation.CheckRemovePackage("Fonts", "Content");
+				Installation.CheckRemovePackage("Images", "Content");
+				Installation.CheckRemovePackage("Music", "Content");
+				Installation.CheckRemovePackage("Sounds", "Content");
+			}
+		}
+		
+		private static async void RunDownloads() {
+
+			// Loop through each package to update:
+			foreach(var ptu in PackagesToUpdate) {
+				Installation.CurrentPackage = ptu.Value;
+				await InstallPackage(Installation.CurrentPackage);
+				break;
+			}
+
+			// Update the Creo Launcher's Label:
+			using(WebClient client = new WebClient()) {
+				string curVersion = client.DownloadString(Configs.BucketURL + Configs.VersionFile);
+				MainWindow.WindowRef.SetVersionLabel(curVersion);
+			}
+
+			MainWindow.WindowRef.SetStatus(LaunchStatus.Ready);
+			MainWindow.WindowRef.StatusShow("Updates Installed!", 33, 163, 37, 255);
+		}
+
+		private static bool CheckRemovePackage(string PackageToConsider, string PackageToCompare) {
+			if(PackagesToUpdate.ContainsKey(PackageToConsider)) {
+				if(PackagesToUpdate[PackageToConsider].versionID <= PackagesToUpdate[PackageToCompare].versionID) {
+					PackagesToUpdate.Remove(PackageToConsider);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private static async Task<bool> InstallPackage(GamePackage package) {
 			try {
 
 				// Update Status
@@ -111,20 +167,42 @@ namespace CreoLauncher {
 
 				string downloadPath = Path.Combine(Installation.pathDownloads, package.downloadPath);
 
-				WebClient webClient = new WebClient();
-				webClient.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
-				webClient.DownloadFileAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath, package);
-			}
-			
-			catch(Exception ex) {
+				using(WebClient client = new WebClient()) {
+					client.DownloadProgressChanged += DownloadProgressChanged;
+					client.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
+					//client.DownloadFile(new Uri(Configs.BucketURL + package.downloadPath), downloadPath);
+					//client.DownloadFileAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath, package);
+					await client.DownloadFileTaskAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath).ContinueWith(t => t.Exception.Message);
+				}
+
+				return true;
+
+			} catch(Exception ex) {
 				MainWindow.WindowRef.SetStatus(LaunchStatus.DownloadFailed);
 				MainWindow.WindowRef.SetMessageBox($"Error while downloading game updates: {ex}");
 			}
+
+			return false;
+		}
+
+		// Show the progress of the download in a progress bar.
+		private static void DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e) {
+			Console.WriteLine(e.ProgressPercentage);
 		}
 
 		private static void DownloadGameCompletedCallback(object sender, AsyncCompletedEventArgs e) {
+			
 			try {
-				GamePackage package = (GamePackage)e.UserState;
+
+				// If there was an error from download:
+				if(e.Error != null) {
+					throw new Exception(e.Error.Message);
+				}
+
+				GamePackage package = Installation.CurrentPackage;
+
+				// Assign Package As Download Completed:
+				PackageDownloaded[package.title] = true;
 
 				string fromPath = Path.Combine(Installation.pathDownloads, package.downloadPath);
 				string basePath = "";
@@ -174,14 +252,6 @@ namespace CreoLauncher {
 
 				Installation.SaveVersionData(localVersion);
 
-				// Update the Creo Launcher's Label:
-				WebClient webClient = new WebClient();
-				string curVersion = webClient.DownloadString(Configs.BucketURL + Configs.VersionFile);
-
-				// Update Main Window
-				MainWindow.WindowRef.SetVersionLabel(curVersion);
-				MainWindow.WindowRef.SetStatus(LaunchStatus.Ready);
-				MainWindow.WindowRef.StatusShow("Updates Installed!", 33, 163, 37, 255);
 			} catch(Exception ex) {
 				MainWindow.WindowRef.SetStatus(LaunchStatus.DownloadFailed);
 				MainWindow.WindowRef.SetMessageBox($"Error from installing update: {ex}");

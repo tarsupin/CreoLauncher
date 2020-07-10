@@ -5,15 +5,16 @@ namespace CreoLauncher {
 
 	// -- Versioning Data -- /
 
-	// Versioning.txt:		"Images:0:1:Images.zip:/Contents/Images;etc..."
+	// Versioning.txt:		"Images:0:1:Images.zip:Images:Content;etc..."
 	//	- This contains a Dictionary of the rules for each Versioning Package.
 	//	- 1) The Package Title (e.g. "Images", "Game", "Music", etc.
 	//	- 2) The Versioning ID to compare to other versions.
 	//	- 3) The Base Directory Enum (Root Directory, Build Directory, Content Directory, Local Directory)
 	//	- 4) The File to Download from the Server.
-	//	- 5) The Destination Directory. Where to unzip or deliver the package / file.
+	//	- 5) The Destination Directory. Where to unzip or deliver the package / file. Leave empty if in the "Base Directory" folder.
 
 	// If one of your Versioning IDs is lower than the online Versioning ID, then the package needs to be updated.
+	//		- UNLESS, that versioning ID is also lower than a parent package that is also being downloaded.
 
 	// Hardcoded Rules:
 	//	- If "Game" package needs updating, it's the only one you need to update. Ignore all others and mark them updated.
