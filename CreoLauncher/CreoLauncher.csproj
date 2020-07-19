@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="images\GameIcon.ico" />
+    <Resource Include="images\GameIcon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>

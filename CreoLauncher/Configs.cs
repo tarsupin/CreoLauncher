@@ -3,7 +3,7 @@
 	public static class Configs {
 
 		// General URLs
-		public const string WebsiteLaunchURL = "http://creo.nexus.games";
+		public const string WebsiteLaunchURL = "https://creo.nexus.games";
 
 		// Download URLs
 		public const string BucketURL = "http://creo-nexus.us-east-1.linodeobjects.com/";

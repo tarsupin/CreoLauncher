@@ -20,7 +20,7 @@
         <Label x:Name="TitleLabel" Content="Creo Nexus" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="41" Width="155" FontSize="22" FontWeight="Bold"/>
         <Label x:Name="VersionLabel" Content="Version 0.0.0" HorizontalAlignment="Left" Margin="150,21,0,0" VerticalAlignment="Top" Height="30" Width="132"/>
         <Label x:Name="StatusLabel" Content="Updating Game" Visibility="Visible" HorizontalAlignment="Center" Margin="0, 0, 0, 10" Height="38" HorizontalContentAlignment="Center" MinWidth="280" MaxWidth="400" MinHeight="38" VerticalAlignment="Bottom" FontSize="24" FontWeight="Bold" Background="#66FFEB23" Padding="10,2,10,0" />
-        <WebBrowser HorizontalAlignment="Center" Margin="10,51,10,60" VerticalAlignment="Top" />
+        <WebBrowser HorizontalAlignment="Center" Margin="10,51,10,60" VerticalAlignment="Top" Source="https://creo.nexus.games/news.html" />
         <Button x:Name="ButtonWebsite" Content="Launch Website" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Height="38" Width="242" Click="Button_LaunchWebsite" Background="#FF415ACB" Foreground="White" FontWeight="Bold" BorderBrush="White" BorderThickness="0,0,0,0" TabIndex="2" Cursor="Hand">
             <Button.Resources>
                 <Style TargetType="Border">

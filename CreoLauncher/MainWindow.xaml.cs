@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using Path = System.IO.Path;
@@ -91,7 +91,7 @@ namespace CreoLauncher {
 		private void Button_PlayGame(object sender, RoutedEventArgs e) {
 
 			// If the game file exists and the launch status is ready, let's play the game.
-			if(File.Exists(Installation.pathApp) && MainWindow.Status == LaunchStatus.Ready) {
+			if(System.IO.File.Exists(Installation.pathApp) && MainWindow.Status == LaunchStatus.Ready) {
 				ProcessStartInfo startInfo = new ProcessStartInfo(Installation.pathApp);
 				startInfo.WorkingDirectory = Path.Combine(Installation.pathRoot, "Build");
 				Process.Start(startInfo);
@@ -104,7 +104,21 @@ namespace CreoLauncher {
 		}
 
 		private void Button_LaunchWebsite(object sender, RoutedEventArgs e) {
-			Process.Start(Configs.WebsiteLaunchURL);
+			string url = Configs.WebsiteLaunchURL;
+			try {
+				Process.Start(url);
+			} catch {
+				if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+					url = url.Replace("&", "^&");
+					Process.Start(new ProcessStartInfo("cmd", $"/c start {url}") { CreateNoWindow = true });
+				} else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+					Process.Start("xdg-open", url);
+				} else if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+					Process.Start("open", url);
+				} else {
+					throw;
+				}
+			}
 		}
 	}
 
