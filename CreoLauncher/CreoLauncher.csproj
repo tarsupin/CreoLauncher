@@ -9,6 +9,9 @@
     <Authors>Nexus Games</Authors>
     <Product />
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Platforms>AnyCPU;x64</Platforms>
+    <SignAssembly>false</SignAssembly>
+    <StartupObject></StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

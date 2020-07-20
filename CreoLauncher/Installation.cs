@@ -170,9 +170,7 @@ namespace CreoLauncher {
 				using(WebClient client = new WebClient()) {
 					client.DownloadProgressChanged += DownloadProgressChanged;
 					client.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadGameCompletedCallback);
-					//client.DownloadFile(new Uri(Configs.BucketURL + package.downloadPath), downloadPath);
-					//client.DownloadFileAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath, package);
-					await client.DownloadFileTaskAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath).ContinueWith(t => t.Exception.Message);
+					await client.DownloadFileTaskAsync(new Uri(Configs.BucketURL + package.downloadPath), downloadPath); // .ContinueWith(t => t.Exception.Message);
 				}
 
 				return true;
@@ -243,7 +241,9 @@ namespace CreoLauncher {
 
 				// If we're working with a regular file.
 				else {
-					File.Move(fromPath, toPath);
+					
+					// Move the file. Overwrite if necessary.
+					File.Move(fromPath, toPath, true);
 				}
 
 				// Update the Versioning.txt File

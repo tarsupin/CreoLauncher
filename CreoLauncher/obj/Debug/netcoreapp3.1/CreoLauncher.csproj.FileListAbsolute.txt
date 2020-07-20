@@ -4,7 +4,6 @@ C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\netcoreapp3.1\Cr
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\netcoreapp3.1\CreoLauncher.runtimeconfig.dev.json
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\netcoreapp3.1\CreoLauncher.dll
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\netcoreapp3.1\CreoLauncher.pdb
-C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\netcoreapp3.1\CreoLauncher.csprojAssemblyReference.cache
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\netcoreapp3.1\MainWindow.g.cs
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\netcoreapp3.1\App.g.cs
 C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\netcoreapp3.1\CreoLauncher_MarkupCompile.cache
