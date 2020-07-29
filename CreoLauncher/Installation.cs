@@ -235,15 +235,15 @@ namespace CreoLauncher {
 				// If we're working with a zip file.
 				// Unzip the file into the destination directory and delete the zip afterward.
 				if(fromPath.IndexOf(".zip") > 0) {
-					ZipFile.ExtractToDirectory(fromPath, toPath, true);
+					ZipFile.ExtractToDirectory(fromPath, toPath);
 					File.Delete(fromPath);
 				}
 
 				// If we're working with a regular file.
 				else {
-					
+
 					// Move the file. Overwrite if necessary.
-					File.Move(fromPath, toPath, true);
+					File.Move(fromPath, toPath);
 				}
 
 				// Update the Versioning.txt File

@@ -1,0 +1,15 @@
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\net472\CreoLauncher.exe.config
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\net472\CreoLauncher.exe
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\bin\Debug\net472\CreoLauncher.pdb
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.csprojAssemblyReference.cache
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\MainWindow.g.cs
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\App.g.cs
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher_MarkupCompile.cache
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher_MarkupCompile.lref
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\MainWindow.baml
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.g.resources
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.csproj.CoreCompileInputs.cache
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.AssemblyInfoInputs.cache
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.AssemblyInfo.cs
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.exe
+C:\Users\nerdy\source\repos\CreoLauncher\CreoLauncher\obj\Debug\net472\CreoLauncher.pdb
